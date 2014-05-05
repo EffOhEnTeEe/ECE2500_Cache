@@ -8,4 +8,8 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    cache.cpp
+
+HEADERS += \
+    cache.h
