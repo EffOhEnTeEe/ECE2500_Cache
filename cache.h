@@ -14,7 +14,7 @@ public:
     void Read(QString filename);
     void to_int();
     void DirectMap(int cachesize, int blocksize, int wt_enable);
-    void NWay(int cachesize, int blocksize, int twoway, int fourway, int full);
+    void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, int full);
 };
 
 #endif // CACHE_H

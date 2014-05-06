@@ -151,3 +151,41 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
     }
     qDebug()<<"For 1024 cache, 8 block size, write back, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
 }
+
+void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, int full)
+{
+    //wt_enable = 1 means write through, 0 means write back
+    int num_blocks = cachesize/blocksize;//Number of blocks
+    if (twoway)
+    {
+        int numsets = num_blocks/2;//Number of sets
+    }
+    else if (fourway)
+    {
+        int numsets = num_blocks/4;
+    }
+    else if (full)
+    {
+        int numsets = 1;
+    }
+    //Deciding ways
+    if (twoway)
+    {
+        int numways = 2;
+    }
+    else if (fourway)
+    {
+        int numways = 4;
+    }
+    else if (full)
+    {
+        int numways = num_blocks;
+    }
+    int C2M = 0;//Cache to memory
+    int M2C = 0;//Memory to Cache
+    float hit = 0;//Keep track of hits
+    float hitdenum = int_addresses.size();//Used to calculate the hit ratio
+    float hitratio = 0;
+    QVector< QVector<int>(numsets)> blocks(numways);//Keeps track of tags
+    QVector<int> written(numsets); //Keep track of written bits for write back. A method of implementing valid bits
+}
