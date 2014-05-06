@@ -61,11 +61,11 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
     int age;    //Bit that keeps track of least recently used
     float hit = 0;//Keep track of hits
     float hitdenum = int_addresses.size();//Used to calculate the hit ratio
-    int dirty = 0;//Dirty bit;
     float hitratio = 0;
     QVector<int> blocks(numsets);//Keeps track of tags
     //To keep track of valid bits, just check if an index in blocks is NULL or not
     QVector<int> lru(numsets); //Keep track of least recently used
+    QVector<int> written(numsets); //Keep track of written bits for write back
 
     //Calculating block index and tag for each
     for (int i = 0; i<int_addresses.size();i++)
@@ -76,19 +76,28 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
         int tag = int_addresses[i]/cachesize;
         if (addresses[i].toLower() == "read")
         {
-            if (blocks[b_index] != tag)
+            if ( (blocks[b_index] != tag) && (written[b_index]=! 1))
             {
+                //If tag doesn't match and no data or
+                //data that wasn't written
                 blocks[b_index] = tag;
                 M2C += blocksize;
+            }
+            else if ( (blocks[b_index] != tag) && (written[b_index] == 1)) //Tag doesn't match and data was recently written
+            {
+                //If tag doesn't match and written data exists
+                blocks[b_index] = tag;
+                written[b_index] = NULL;//Indicates data is there not as a result of a write
+                C2M += blocksize;
             }
             else if (blocks[b_index] == tag)
             {
                 hit++;
             }
         }
-        if (addresses[i].toLower() == "write")
+        else if (addresses[i].toLower() == "write")
         {
-            if (wt_enable == 1)
+            if (wt_enable == 1)//Write through
             {
                 if (blocks[b_index] != tag)
                 {
@@ -104,23 +113,24 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
             }
             else if (wt_enable == 0)//Write back
             {
-                if (blocks[b_index] != tag && blocks[b_index] == NULL)
+                if (blocks[b_index] != tag && (written[b_index]!= 1))
                 {
                     blocks[b_index] = tag;
+                    written[b_index] = 1;//Signify this was just recently written to
                     M2C += blocksize;
                 }
-                if (blocks[b_index] != tag && blocks[b_index] != NULL)
+                if (blocks[b_index] != tag && (written[b_index] == 1))
                 {
-                    dirty++;
                     blocks[b_index] = tag;
                     M2C += blocksize;
+                    C2M += blocksize;
                 }
                 else if (blocks[b_index] == tag)
                 {
                     hit++;
+                    written[b_index] = 1;//Signify this was just recently written to
                 }
             }
         }
     }//For loop end bracket
-    C2M = C2M + (dirty*blocksize);
 }
