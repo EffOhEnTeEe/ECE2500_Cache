@@ -13,6 +13,7 @@ public:
     Cache();
     void Read(QString filename);
     void to_int();
+    void DirectMap(int cachesize, int blocksize, int wt_enable);
 };
 
 #endif // CACHE_H

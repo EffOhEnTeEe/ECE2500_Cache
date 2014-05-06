@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 {
     Cache c1;
     c1.Read(argv[1]);
+    c1.DirectMap(1024,8,0);
     qDebug()<<"Hello world";
     return 0;
 }
