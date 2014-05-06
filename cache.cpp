@@ -187,7 +187,17 @@ void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, 
     float hit = 0;//Keep track of hits
     float hitdenum = int_addresses.size();//Used to calculate the hit ratio
     float hitratio = 0;
-    QVector< QVector<int>(numsets) > blocks(numways);//Keeps track of tags
-    QVector< QVector<int>(numsets) > written(numways); //Keep track of written bits for write back.
-    QVector< QVector<int>(numsets) > LRU(numways); //Keep track of written bits for write back.
+
+    QVector< QVector<int> > blocks(numways);//Keeps track of tags
+    QVector< QVector<int> > written(numways); //Keep track of written bits for write back.
+    QVector< QVector<int> > LRU(numways); //Keep track of written bits for write back.
+
+    for(int i = 0; i < numways; i++)
+    {
+        QVector<int> tempWay(numsets);
+        blocks.append(temp);
+        written.append(temp);
+        LRU.append(temp);
+
+    }
 }
