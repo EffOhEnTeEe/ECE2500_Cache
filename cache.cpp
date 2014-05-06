@@ -156,6 +156,7 @@ void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, 
 {
     //wt_enable = 1 means write through, 0 means write back
     int num_blocks = cachesize/blocksize;//Number of blocks
+    int age;    //Used to keep track of LRU
     if (twoway)
     {
         int numsets = num_blocks/2;//Number of sets
@@ -186,6 +187,7 @@ void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, 
     float hit = 0;//Keep track of hits
     float hitdenum = int_addresses.size();//Used to calculate the hit ratio
     float hitratio = 0;
-    QVector< QVector<int>(numsets)> blocks(numways);//Keeps track of tags
-    QVector<int> written(numsets); //Keep track of written bits for write back. A method of implementing valid bits
+    QVector< QVector<int>(numsets) > blocks(numways);//Keeps track of tags
+    QVector< QVector<int>(numsets) > written(numways); //Keep track of written bits for write back.
+    QVector< QVector<int>(numsets) > LRU(numways); //Keep track of written bits for write back.
 }
