@@ -9,6 +9,8 @@
 
 Cache::Cache()
 {
+    QList<QString> rw_instruction;//Read or write
+    QList<QString> address_instruction;//Addresses
 }
 void Cache::Read(QString filename)
 {
@@ -28,7 +30,6 @@ void Cache::Read(QString filename)
         readwrite.append(splitter[0]);
         addresses.append((splitter[1]));
     }
-    this->to_int();
 }
 
 void Cache::to_int()//Converts the address from string to an integer
@@ -131,5 +132,5 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
         }
     }//For loop end bracket
     hitratio = hit/hitdenum;
-    //qDebug()<<"For 1024 cache, 8 block size, write back, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
+    qDebug()<<"For 1024 cache, 8 block size, write back, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
 }
