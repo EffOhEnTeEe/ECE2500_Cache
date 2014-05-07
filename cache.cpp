@@ -71,7 +71,7 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
         int b_index = (int_addresses[i]/blocksize)%num_blocks;
         qDebug()<<(i+1)<<":"<<"Block index is "<<b_index;
         //Tag
-        int tag = int_addresses[i]/cachesize;
+        int tag = int_addresses[i]/blocksize/numsets;
         qDebug()<<(i+1)<<":"<<"Tag is "<<tag;
         if (readwrite[i].toLower() == "read")
         {
@@ -156,31 +156,34 @@ void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, 
 {
     //wt_enable = 1 means write through, 0 means write back
     int num_blocks = cachesize/blocksize;//Number of blocks
-    int age;    //Used to keep track of LRU
+    int age = 0;    //Used to keep track of LRU
+    int numsets;
+    int numways;
+    //Deciding the number of sets
     if (twoway)
     {
-        int numsets = num_blocks/2;//Number of sets
+        numsets = num_blocks/2;//Number of sets
     }
     else if (fourway)
     {
-        int numsets = num_blocks/4;
+        numsets = num_blocks/4;
     }
     else if (full)
     {
-        int numsets = 1;
+        numsets = 1;
     }
     //Deciding ways
     if (twoway)
     {
-        int numways = 2;
+        numways = 2;
     }
     else if (fourway)
     {
-        int numways = 4;
+        numways = 4;
     }
     else if (full)
     {
-        int numways = num_blocks;
+        numways = num_blocks;
     }
     int C2M = 0;//Cache to memory
     int M2C = 0;//Memory to Cache
@@ -189,15 +192,47 @@ void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, 
     float hitratio = 0;
 
     QVector< QVector<int> > blocks(numways);//Keeps track of tags
-    QVector< QVector<int> > written(numways); //Keep track of written bits for write back.
+    QVector< QVector<int> > written(numways);   //Keep track of written bits for write back. Null signifies empty.
+                                                //0 signifies read/write WT. 1 signifies written WB.
     QVector< QVector<int> > LRU(numways); //Keep track of written bits for write back.
 
-    for(int i = 0; i < numways; i++)
+    for(int i = 0; i < numways; i++)//Appends to the Vectors
     {
-        QVector<int> tempWay(numsets);
+        QVector<int> temp(numsets);
         blocks.append(temp);
         written.append(temp);
         LRU.append(temp);
 
     }
-}
+    //Start of the algorithm
+    for (int i = 0; i<int_addresses.size();i++)
+    {
+        //Block index
+        int b_index = (int_addresses[i]/blocksize)%num_blocks;
+        qDebug()<<(i+1)<<":"<<"Block index is "<<b_index;
+        //Tag
+        int tag = int_addresses[i]/cachesize;
+        qDebug()<<(i+1)<<":"<<"Tag is "<<tag;
+
+        if (readwrite[i].toLower() == "read")
+        {
+            for(int i = 0; i<blocks.size(); i++)//Iterate through all the ways
+            {
+                if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
+                {
+                    //If tag doesn't match and no data is there
+                    blocks[i][b_index] = tag;
+                    written[i][b_index] = 0;
+                    LRU[i][b_index] = age;
+                    age++;
+                    M2C += blocksize;
+                    qDebug()<<"1 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<" age is "<<age<<"\n";;
+                }
+            }
+        }
+        }
+        if (readwrite[i].toLower() == "write")
+        {
+
+        }
+    }
