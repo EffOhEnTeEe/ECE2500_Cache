@@ -109,13 +109,13 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
                 {
                     blocks[b_index] = tag;
                     M2C += blocksize;
-                    C2M += blocksize;
+                    C2M += 4;
                     qDebug()<<"4 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
                 }
                 else if (blocks[b_index] == tag)
                 {
                     hit++;
-                    C2M += blocksize;
+                    C2M += 4;
                     qDebug()<<"5 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
                 }
             }
@@ -304,7 +304,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         hit++;
                         LRU[i][b_index] = age;
                         age++;
-                        C2M += blocksize;
+                        C2M += 4;
                         flag_hit = 1;
                         qDebug()<<"WTHit: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
                                   " written is"<<written[i][b_index]<<"\n";
@@ -324,7 +324,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                             LRU[i][b_index] = age;
                             age++;
                             M2C += blocksize;
-                            C2M += blocksize;
+                            C2M += 4;
                             flag_found = 1;//Placement found
                             qDebug()<<"WTPlaced: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
                                       " written is"<<written[i][b_index]<<"\n";
@@ -349,7 +349,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     blocks[r_i][b_index] = tag;
                     written[r_i][b_index] = 0;//Indicates there is data. Do this just in case
                     M2C += blocksize;//Get data from memory since it's a read miss
-                    C2M += blocksize;//Write data to memory
+                    C2M += 4;//Write data to memory
                     LRU[r_i][b_index] = age;//Update age bit to make it most recent
                     age++;
                     qDebug()<<"WTLRU: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
@@ -409,7 +409,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                             r_i = i+1;
                         }
                     }
-                    if (written[r_i][b_index] == 1)//If data there was from a wSrite back
+                    if (written[r_i][b_index] == 1)//If data there was from a write back
                     {
                         blocks[r_i][b_index] = tag;
                         written[r_i][b_index] = 1;//Indicates data is there as a result of a write back. Do this just in case
