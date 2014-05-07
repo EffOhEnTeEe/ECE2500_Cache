@@ -263,7 +263,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     }
                 }
             }
-            if (flag_found == 0)//If placement was not found, perform LRU algorithm
+            if ((flag_found == 0)&&(flag_hit == 0))//If placement was not found, perform LRU algorithm
             {
                 int r_i = 0;//Replaced i
                 for(int a = 0; a<numways-1; a++)//Iterate through all the ways
@@ -288,7 +288,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     qDebug()<<"ReadLRU1: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
                               " written is"<<written->at(r_i)->at(b_index)<<"\n";
                 }
-                if (written->at(r_i)->at(b_index)== 0)//Data here was not from a write back
+                else if (written->at(r_i)->at(b_index)== 0)//Data here was not from a write back
                 {
                     blocks->at(r_i)->replace(b_index,tag);
                     written->at(r_i)->replace(b_index,0);//Indicates data is there not as a result of a write
@@ -342,7 +342,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         }
                     }
                 }
-                if (flag_found == 0)//If placement was not found, perform LRU algorithm
+                if ((flag_found == 0)&&(flag_hit == 0))//If placement was not found, perform LRU algorithm
                 {
                     int r_i = 0;//Replaced i
                     for(int a = 0; a<numways-1; a++)
@@ -405,7 +405,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         }
                     }
                 }
-                if (flag_found == 0)//If placement was not found, perform LRU algorithm
+                if ((flag_found == 0)&&(flag_hit == 0))//If placement was not found, perform LRU algorithm
                 {
                     int r_i = 0;//Replaced i
                     for(int a = 0; a<numways-1; a++)
@@ -430,7 +430,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         qDebug()<<"WBLRU1: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
                                   " written is"<<written->at(r_i)->at(b_index)<<"\n";
                     }
-                    if (written->at(r_i)->at(b_index) == 0)//If data there is not from a write back
+                    else if (written->at(r_i)->at(b_index) == 0)//If data there is not from a write back
                     {
                         blocks->at(r_i)->replace(b_index, tag);
                         written->at(r_i)->replace(b_index, 1);//Indicates data is there as a result of a write back. Do this just in case
@@ -449,7 +449,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     {
         for (int j = 0; j<numsets; j++)
         {
-                C2M += (written->at(i)->at(j)*blocksize);
+            C2M += (written->at(i)->at(j)*blocksize);
         }
     }
     qDebug()<<"For 1024 cache, 8 block size, write through, 2 way, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
