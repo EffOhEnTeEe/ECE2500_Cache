@@ -89,6 +89,7 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
                 //If tag doesn't match and written data exists
                 blocks[b_index] = tag;
                 written[b_index] = 0;//Indicates data is there not as a result of a write
+                M2C += blocksize;
                 C2M += blocksize;
                 qDebug()<<"2 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
 
@@ -219,7 +220,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
             int flag_hit = 0;//If a hit
             int flag_found = 0;//If a space is found
             //Checking for a hit
-            for(int i = 0; i<numways; i++)//Iterate through all the ways
+            for(int i = 0; i<numways; i++)//Iterate through all the ways to find a hit
             {
                 if(blocks[i][b_index] == tag)
                 {
@@ -249,11 +250,36 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     }
                 }
             }
-            if (flag == 0)//If place
+            if (flag_found == 0)//If placement was not found, perform LRU algorithm
             {
-                for(int i = 0; i<numways; i++)//Iterate through all the ways
+                int r_i = 0;//Replaced i
+                for(int i = 0; i<numways-1; i++)//Iterate through all the ways
                 {
-
+                    if(LRU[r_i][b_index] < LRU[i+1][b_index])
+                    {
+                        r_i = i;
+                    }
+                    else
+                    {
+                        r_i = i+1;
+                    }
+                }
+                if (written[r_i][b_index]== 1)//Data here was from a write back
+                {
+                    blocks[r_i][b_index] = tag;
+                    written[r_i][b_index] = 0;//Indicates data is there not as a result of a write
+                    M2C += blocksize;
+                    C2M += blocksize;
+                    LRU[r_i][b_index] = age;
+                    age++;
+                }
+                if (written[r_i][b_index]== 0)//Data here was not from a write back
+                {
+                    blocks[r_i][b_index] = tag;
+                    written[r_i][b_index] = 0;//Indicates data is there not as a result of a write
+                    M2C += blocksize;
+                    LRU[r_i][b_index] = age;
+                    age++;
                 }
             }
         }
