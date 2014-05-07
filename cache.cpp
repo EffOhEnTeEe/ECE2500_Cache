@@ -82,7 +82,7 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
                 //data that wasn't written
                 blocks[b_index] = tag;
                 M2C += blocksize;
-                qDebug()<<"1 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";;
+                qDebug()<<"1 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
             }
             else if ( (blocks[b_index] != tag) && (written[b_index] == 1)) //Tag doesn't match and data was recently written
             {
@@ -97,7 +97,7 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
             else if (blocks[b_index] == tag)
             {
                 hit++;
-                qDebug()<<"3 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";;
+                qDebug()<<"3 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
             }
         }
         else if (readwrite[i].toLower() == "write")
@@ -110,13 +110,13 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
                     blocks[b_index] = tag;
                     M2C += blocksize;
                     C2M += blocksize;
-                    qDebug()<<"4 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";;
+                    qDebug()<<"4 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
                 }
                 else if (blocks[b_index] == tag)
                 {
                     hit++;
                     C2M += blocksize;
-                    qDebug()<<"5 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";;
+                    qDebug()<<"5 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
                 }
             }
             else if (wt_enable == 0)//Write back
@@ -127,20 +127,20 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
                     blocks[b_index] = tag;
                     written[b_index] = 1;//Signify this was just recently written to
                     M2C += blocksize;
-                    qDebug()<<"6 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";;
+                    qDebug()<<"6 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
                 }
                 else if (blocks[b_index] != tag && (written[b_index] == 1))
                 {
                     blocks[b_index] = tag;
                     M2C += blocksize;
                     C2M += blocksize;
-                    qDebug()<<"7 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";;
+                    qDebug()<<"7 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
                 }
                 else if (blocks[b_index] == tag)
                 {
                     hit++;
                     written[b_index] = 1;//Signify this was just recently written to
-                    qDebug()<<"8 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";;
+                    qDebug()<<"8 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<"\n";
                 }
             }
         }
@@ -163,7 +163,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     //Deciding the number of sets
     if (twoway)
     {
-        numsets = num_blocks/2;//Number of sets
+        numsets = num_blocks/2;
     }
     else if (fourway)
     {
@@ -195,7 +195,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     QVector< QVector<int> > blocks(numways);//Keeps track of tags
     QVector< QVector<int> > written(numways);   //Keep track of written bits for write back. Null signifies empty.
     //0 signifies read/write WT. 1 signifies written WB.
-    QVector< QVector<int> > LRU(numways); //Keep track of written bits for write back.
+    QVector< QVector<int> > LRU(numways); //Keep track of age bits
 
     for(int i = 0; i < numways; i++)//Appends to the Vectors
     {
@@ -209,10 +209,10 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     for (int i = 0; i<int_addresses.size();i++)
     {
         //Block index
-        int b_index = (int_addresses[i]/blocksize)%num_blocks;
+        int b_index = (int_addresses[i]/blocksize)%numsets;
         qDebug()<<(i+1)<<":"<<"Block index is "<<b_index;
         //Tag
-        int tag = int_addresses[i]/cachesize;
+        int tag = int_addresses[i]/blocksize/numsets;
         qDebug()<<(i+1)<<":"<<"Tag is "<<tag;
 
         if (readwrite[i].toLower() == "read")
@@ -234,7 +234,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
             //If a hit was not found, see if there is an empty space for the data
             if (flag_hit != 1)
             {
-                for(int i = 0; i<numways; i++)//Iterate through all the ways
+                for(int i = 0; i<numways; i++)//Iterate through all the ways to find empty set
                 {
                     if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
                     {
@@ -244,7 +244,6 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         LRU[i][b_index] = age;
                         age++;
                         M2C += blocksize;
-                        qDebug()<<"1 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<" age is "<<age<<"\n";
                         flag_found = 1;//Placement found
                         break;
                     }
@@ -268,24 +267,149 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 {
                     blocks[r_i][b_index] = tag;
                     written[r_i][b_index] = 0;//Indicates data is there not as a result of a write
-                    M2C += blocksize;
-                    C2M += blocksize;
-                    LRU[r_i][b_index] = age;
+                    M2C += blocksize;//Get data from memory since it's a read miss
+                    C2M += blocksize;//Eviction so C2M needs to update
+                    LRU[r_i][b_index] = age;//Update age bit to make it most recent
                     age++;
                 }
                 if (written[r_i][b_index]== 0)//Data here was not from a write back
                 {
                     blocks[r_i][b_index] = tag;
                     written[r_i][b_index] = 0;//Indicates data is there not as a result of a write
-                    M2C += blocksize;
-                    LRU[r_i][b_index] = age;
+                    M2C += blocksize;//Get data from memory since it's a read miss
+                    LRU[r_i][b_index] = age;//Update age bit to make it most recent
                     age++;
                 }
             }
         }
         if (readwrite[i].toLower() == "write")
         {
+            if (wt_enable == 1)//Write through
+            {
+                int flag_hit = 0;//If a hit
+                int flag_found = 0;//If a space is found
+                //Checking for a hit
+                for(int i = 0; i<numways; i++)//Iterate through all the ways to find a hit
+                {
+                    if(blocks[i][b_index] == tag)
+                    {
+                        hit++;
+                        LRU[i][b_index] = age;
+                        age++;
+                        C2M += blocksize;
+                        flag_hit = 1;
+                        break;
+                    }
+                }
+                //If a hit was not found, see if there is an empty space for the data
+                if (flag_hit != 1)
+                {
+                    for(int i = 0; i<numways; i++)//Iterate through all the ways to find empty set
+                    {
+                        if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
+                        {
+                            //If tag doesn't match and no data is there
+                            blocks[i][b_index] = tag;
+                            written[i][b_index] = 0;
+                            LRU[i][b_index] = age;
+                            age++;
+                            M2C += blocksize;
+                            C2M += blocksize;
+                            flag_found = 1;//Placement found
+                            break;
+                        }
+                    }
+                }
+                if (flag_found == 0)//If placement was not found, perform LRU algorithm
+                {
+                    int r_i = 0;//Replaced i
+                    for(int i = 0; i<numways-1; i++)
+                    {
+                        if(LRU[r_i][b_index] < LRU[i+1][b_index])
+                        {
+                            r_i = i;
+                        }
+                        else
+                        {
+                            r_i = i+1;
+                        }
+                    }
+                    blocks[r_i][b_index] = tag;
+                    written[r_i][b_index] = 0;//Indicates there is data. Do this just in case
+                    M2C += blocksize;//Get data from memory since it's a read miss
+                    C2M += blocksize;//Write data to memory
+                    LRU[r_i][b_index] = age;//Update age bit to make it most recent
+                    age++;
+                }
+            }//End of WT
 
+            else if (wt_enable == 0)//Write back
+            {
+                int flag_hit = 0;//If a hit
+                int flag_found = 0;//If a space is found
+                //Checking for a hit
+                for(int i = 0; i<numways; i++)//Iterate through all the ways to find a hit
+                {
+                    if(blocks[i][b_index] == tag)
+                    {
+                        hit++;
+                        LRU[i][b_index] = age;
+                        age++;
+                        flag_hit = 1;
+                        break;
+                    }
+                }
+                //If a hit was not found, see if there is an empty space for the data
+                if (flag_hit != 1)
+                {
+                    for(int i = 0; i<numways; i++)//Iterate through all the ways to find empty set
+                    {
+                        if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
+                        {
+                            //If tag doesn't match and no data is there
+                            blocks[i][b_index] = tag;
+                            written[i][b_index] = 1;
+                            LRU[i][b_index] = age;
+                            age++;
+                            M2C += blocksize;
+                            flag_found = 1;//Placement found
+                            break;
+                        }
+                    }
+                }
+                if (flag_found == 0)//If placement was not found, perform LRU algorithm
+                {
+                    int r_i = 0;//Replaced i
+                    for(int i = 0; i<numways-1; i++)
+                    {
+                        if(LRU[r_i][b_index] < LRU[i+1][b_index])
+                        {
+                            r_i = i;
+                        }
+                        else
+                        {
+                            r_i = i+1;
+                        }
+                    }
+                    if (written[r_i][b_index] == 1)//If data there was from a write back
+                    {
+                        blocks[r_i][b_index] = tag;
+                        written[r_i][b_index] = 1;//Indicates data is there as a result of a write back. Do this just in case
+                        M2C += blocksize;//Get data from memory since it's a read miss
+                        C2M += blocksize;//Write data to memory since evicting
+                        LRU[r_i][b_index] = age;//Update age bit to make it most recent
+                        age++;
+                    }
+                    if (written[r_i][b_index] == 0)//If data there is not from a write back
+                    {
+                        blocks[r_i][b_index] = tag;
+                        written[r_i][b_index] = 1;//Indicates data is there as a result of a write back. Do this just in case
+                        M2C += blocksize;//Get data from memory since it's a read miss
+                        LRU[r_i][b_index] = age;//Update age bit to make it most recent
+                        age++;
+                    }
+                }
+            }
         }
     }
 }
