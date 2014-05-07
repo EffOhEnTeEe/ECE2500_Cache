@@ -443,15 +443,15 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     }
                 }
             }
-        }
+        }//End of WB if statement
     }//End of for loop
     hitratio = hit/hitdenum;
     for (int i = 0; i<numways; i++)//Evict the last bits
     {
         for (int j = 0; j<numsets; j++)
         {
-            C2M += (written->at(i)->at(j)*blocksize);
+            C2M += ((written->at(i)->at(j))*blocksize);
         }
     }
-    qDebug()<<"For 1024 cache, 8 block size, write through, 2 way, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
+    qDebug()<<"Hit "<<hitratio<<" M2C is "<<M2C<<" C2M is "<<C2M;
 }
