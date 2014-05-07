@@ -200,7 +200,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
 
     for(int i = 0; i < numways; i++)//Appends to the Vectors
     {
-        QVector<int> temp(numsets);
+        QVector<int> temp(numsets);;
         blocks.append(temp);
         written.append(temp);
         LRU.append(temp);
@@ -243,12 +243,17 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 for(int a = 0; a<numways; a++)//Iterate through all the ways to find empty set
                 {
                     qDebug()<<"checking";
-                    if((blocks[a][b_index]!= tag) && (written[a][b_index]== NULL) )
+                    if(blocks.at(a).at(b_index) == NULL )
                     {
+                        qDebug()<<"Entered if";
                         //If tag doesn't match and no data is there
                         blocks[a][b_index] = tag;
+                        qDebug()<<"Tag set";
                         written[a][b_index] = 0;
+                        qDebug()<<"Written set to "<<written[a][b_index];
+                        qDebug()<<"Line after written";
                         LRU[a][b_index] = age;
+                        qDebug()<<"LRU set";
                         age++;
                         M2C += blocksize;
                         flag_found = 1;//Placement found
