@@ -187,25 +187,34 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     {
         numways = num_blocks;
     }
+    qDebug()<<"Numways is"<<numways;
+    qDebug()<<"Numsets is"<<numsets;
     int C2M = 0;//Cache to memory
     int M2C = 0;//Memory to Cache
     float hit = 0;//Keep track of hits
     float hitdenum = int_addresses.size();//Used to calculate the hit ratio
     float hitratio = 0;
 
-    QVector< QVector<int> > blocks(numways);//Keeps track of tags
-    QVector< QVector<int> > written(numways);   //Keep track of written bits for write back. Null signifies empty.
+    QVector< QVector<int>* >* blocks = new QVector<QVector<int>*>(numways);     //Keeps track of tags
+    QVector< QVector<int>* >* written =  new QVector<QVector<int>*>(numways);   //Keep track of written bits for write back. Null signifies empty.
     //0 signifies read/write WT. 1 signifies written WB.
-    QVector< QVector<int> > LRU(numways); //Keep track of age bits
+    QVector< QVector<int>* >* LRU = new QVector<QVector<int>*>(numways);               //Keep track of age bits
 
     for(int i = 0; i < numways; i++)//Appends to the Vectors
     {
-        QVector<int> temp(numsets);;
-        blocks.append(temp);
-        written.append(temp);
-        LRU.append(temp);
+        qDebug()<<"Numsets is"<<numsets;
+        QVector<int>* temp= new QVector<int>(numsets);
+        QVector<int>* temp2= new QVector<int>(numsets);
+        QVector<int>* temp3= new QVector<int>(numsets);
+        temp->fill(-1);
+        blocks->append(temp);
+        temp2->fill(-1);
+        written->append(temp2);
+        temp3->fill(0);
+        LRU->append(temp3);
 
     }
+    qDebug()<<blocks->at(0);
     //Start of the algorithm
     for (int i = 0; i<int_addresses.size();i++)
     {
@@ -225,14 +234,17 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
             //Checking for a hit
             for(int a = 0; a<numways; a++)//Iterate through all the ways to find a hit
             {
-                if(blocks[a][b_index] == tag)
+                qDebug()<<"Entered first for floop";
+                qDebug()<<blocks->at(a)->at(b_index);
+                if(blocks->at(a)->at(b_index) == tag)
                 {
+                    qDebug()<<"Entered if";
                     hit++;
-                    LRU[a][b_index] = age;
+                    LRU->at(a)->replace(b_index, age);
                     age++;
                     flag_hit = 1;
                     qDebug()<<"ReadHit: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                              " written is"<<written[a][b_index]<<"\n";
+                              " written is"<<written->at(a)->at(b_index)<<"\n";
                     break;
                 }
             }
@@ -243,26 +255,26 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 for(int a = 0; a<numways; a++)//Iterate through all the ways to find empty set
                 {
                     qDebug()<<"checking";
-                    if(blocks.at(a).at(b_index) == NULL )
+                    if(blocks->at(a)->at(b_index) == NULL )
                     {
                         qDebug()<<"Entered if";
                         //If tag doesn't match and no data is there
-                        blocks[a][b_index] = tag;
+                        blocks->at(a)->replace(b_index,tag);
                         qDebug()<<"Tag set";
-                        written[a][b_index] = 0;
-                        qDebug()<<"Written set to "<<written[a][b_index];
-                        qDebug()<<"Line after written";
-                        LRU[a][b_index] = age;
-                        qDebug()<<"LRU set";
+                        LRU->at(a)->replace(b_index,age);
+                        qDebug()<<"Set the LRU";
+                        written->at(a)->replace(b_index,2);
+                        qDebug()<<"Written set to "<<written->at(a)->at(b_index);
+                        qDebug()<<"Written set to "<<written->at(a)->at(b_index);
                         age++;
                         M2C += blocksize;
                         flag_found = 1;//Placement found
                         qDebug()<<"ReadPlace: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[a][b_index]<<"\n";
+                                  " written is"<<written->at(a)->at(b_index)<<"\n";
                         break;
                     }
                     qDebug()<<flag_found;
-                    qDebug()<<written[a][b_index];
+                    qDebug()<<written->at(a)->at(b_index);
                 }
             }
             if (flag_found == 0)//If placement was not found, perform LRU algorithm
@@ -270,7 +282,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 int r_i = 0;//Replaced i
                 for(int a = 0; a<numways-1; a++)//Iterate through all the ways
                 {
-                    if(LRU[r_i][b_index] < LRU[a+1][b_index])
+                    if(LRU->at(r_i)->at(b_index) < LRU->at(a+1)->at(b_index))
                     {
                         r_i = a;
                     }
@@ -279,26 +291,26 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         r_i = a+1;
                     }
                 }
-                if (written[r_i][b_index]== 1)//Data here was from a write back
+                if (written->at(r_i)->at(b_index) == 1)//Data here was from a write back
                 {
-                    blocks[r_i][b_index] = tag;
-                    written[r_i][b_index] = 0;//Indicates data is there not as a result of a write
+                    blocks->at(r_i)->replace(b_index,tag);
+                    written->at(r_i)->replace(b_index,0);//Indicates data is there not as a result of a write
                     M2C += blocksize;//Get data from memory since it's a read miss
                     C2M += blocksize;//Eviction so C2M needs to update
-                    LRU[r_i][b_index] = age;//Update age bit to make it most recent
+                    LRU->at(r_i)->replace(b_index,age);//Update age bit to make it most recent
                     age++;
                     qDebug()<<"ReadLRU1: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                              " written is"<<written[r_i][b_index]<<"\n";
+                              " written is"<<written->at(r_i)->at(b_index)<<"\n";
                 }
-                if (written[r_i][b_index]== 0)//Data here was not from a write back
+                if (written->at(r_i)->at(b_index)== 0)//Data here was not from a write back
                 {
-                    blocks[r_i][b_index] = tag;
-                    written[r_i][b_index] = 0;//Indicates data is there not as a result of a write
+                    blocks->at(r_i)->replace(b_index,tag);
+                    written->at(r_i)->replace(b_index,0);//Indicates data is there not as a result of a write
                     M2C += blocksize;//Get data from memory since it's a read miss
-                    LRU[r_i][b_index] = age;//Update age bit to make it most recent
+                    LRU->at(r_i)->replace(b_index,age);//Update age bit to make it most recent
                     age++;
                     qDebug()<<"ReadLRU0: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                              " written is"<<written[r_i][b_index]<<"\n";
+                              " written is"<<written->at(r_i)->at(b_index)<<"\n";
                 }
             }
         }
@@ -311,15 +323,15 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 //Checking for a hit
                 for(int a = 0; a<numways; a++)//Iterate through all the ways to find a hit
                 {
-                    if(blocks[a][b_index] == tag)
+                    if(blocks->at(a)->at(b_index) == tag)
                     {
                         hit++;
-                        LRU[a][b_index] = age;
+                        LRU->at(a)->replace(b_index, age);
                         age++;
                         C2M += 4;
                         flag_hit = 1;
                         qDebug()<<"WTHit: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[a][b_index]<<"\n";
+                                  " written is"<<written->at(a)->at(b_index)<<"\n";
                         break;
                     }
                 }
@@ -328,18 +340,18 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 {
                     for(int a = 0; a<numways; a++)//Iterate through all the ways to find empty set
                     {
-                        if((blocks[a][b_index]!= tag) && (written[a][b_index]== NULL))
+                        if((blocks->at(a)->at(b_index)!= tag) && (written->at(a)->at(b_index)== NULL))
                         {
                             //If tag doesn't match and no data is there
-                            blocks[a][b_index] = tag;
-                            written[a][b_index] = 0;
-                            LRU[a][b_index] = age;
+                            blocks->at(a)->replace(b_index,tag);
+                            written->at(a)->replace(b_index, 0);
+                            LRU->at(a)->replace(b_index, age);
                             age++;
                             M2C += blocksize;
                             C2M += 4;
                             flag_found = 1;//Placement found
                             qDebug()<<"WTPlaced: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                      " written is"<<written[a][b_index]<<"\n";
+                                      " written is"<<written->at(a)->at(b_index)<<"\n";
                             break;
                         }
                     }
@@ -349,7 +361,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     int r_i = 0;//Replaced i
                     for(int a = 0; a<numways-1; a++)
                     {
-                        if(LRU[r_i][b_index] < LRU[a+1][b_index])
+                        if(LRU->at(r_i)->at(b_index) < LRU->at(a+1)->at(b_index))
                         {
                             r_i = a;
                         }
@@ -358,14 +370,14 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                             r_i = a+1;
                         }
                     }
-                    blocks[r_i][b_index] = tag;
-                    written[r_i][b_index] = 0;//Indicates there is data. Do this just in case
+                    blocks->at(r_i)->replace(b_index,tag);
+                    written->at(r_i)->replace(b_index, 0);//Indicates there is data. Do this just in case
                     M2C += blocksize;//Get data from memory since it's a read miss
                     C2M += 4;//Write data to memory
-                    LRU[r_i][b_index] = age;//Update age bit to make it most recent
+                    LRU->at(r_i)->replace(b_index, age);//Update age bit to make it most recent
                     age++;
                     qDebug()<<"WTLRU: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                              " written is"<<written[r_i][b_index]<<"\n";
+                              " written is"<<written->at(r_i)->at(b_index)<<"\n";
                 }
             }//End of WT
 
@@ -376,14 +388,14 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 //Checking for a hit
                 for(int a = 0; a<numways; a++)//Iterate through all the ways to find a hit
                 {
-                    if(blocks[a][b_index] == tag)
+                    if(blocks->at(a)->at(b_index) == tag)
                     {
                         hit++;
-                        LRU[a][b_index] = age;
+                        LRU->at(a)->replace(b_index, age);
                         age++;
                         flag_hit = 1;
                         qDebug()<<"WBHit: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[a][b_index]<<"\n";
+                                  " written is"<<written->at(a)->at(b_index)<<"\n";
                         break;
                     }
                 }
@@ -392,17 +404,17 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 {
                     for(int a = 0; a<numways; a++)//Iterate through all the ways to find empty set
                     {
-                        if((blocks[a][b_index]!= tag) && (written[a][b_index]== NULL))
+                        if((blocks->at(a)->at(b_index)!= tag) && (written->at(a)->at(b_index)== NULL))
                         {
                             //If tag doesn't match and no data is there
-                            blocks[a][b_index] = tag;
-                            written[a][b_index] = 1;
-                            LRU[a][b_index] = age;
+                            blocks->at(a)->replace(b_index,tag);
+                            written->at(a)->replace(b_index, 1);
+                            LRU->at(a)->replace(b_index, age);
                             age++;
                             M2C += blocksize;
                             flag_found = 1;//Placement found
                             qDebug()<<"WBPlaced: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                      " written is"<<written[a][b_index]<<"\n";
+                                      " written is"<<written->at(a)->at(b_index)<<"\n";
                             break;
                         }
                     }
@@ -412,7 +424,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     int r_i = 0;//Replaced i
                     for(int a = 0; a<numways-1; a++)
                     {
-                        if(LRU[r_i][b_index] < LRU[a+1][b_index])
+                        if(LRU->at(r_i)->at(b_index) < LRU->at(a+1)->at(b_index))
                         {
                             r_i = a;
                         }
@@ -421,26 +433,26 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                             r_i = a+1;
                         }
                     }
-                    if (written[r_i][b_index] == 1)//If data there was from a write back
+                    if (written->at(r_i)->at(b_index) == 1)//If data there was from a write back
                     {
-                        blocks[r_i][b_index] = tag;
-                        written[r_i][b_index] = 1;//Indicates data is there as a result of a write back. Do this just in case
+                        blocks->at(r_i)->replace(b_index, tag);
+                        written->at(r_i)->replace(b_index, 1);//Indicates data is there as a result of a write back. Do this just in case
                         M2C += blocksize;//Get data from memory since it's a read miss
                         C2M += blocksize;//Write data to memory since evicting
-                        LRU[r_i][b_index] = age;//Update age bit to make it most recent
+                        LRU->at(r_i)->replace(b_index, age);//Update age bit to make it most recent
                         age++;
                         qDebug()<<"WBLRU1: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[r_i][b_index]<<"\n";
+                                  " written is"<<written->at(r_i)->at(b_index)<<"\n";
                     }
-                    if (written[r_i][b_index] == 0)//If data there is not from a write back
+                    if (written->at(r_i)->at(b_index) == 0)//If data there is not from a write back
                     {
-                        blocks[r_i][b_index] = tag;
-                        written[r_i][b_index] = 1;//Indicates data is there as a result of a write back. Do this just in case
+                        blocks->at(r_i)->replace(b_index, tag);
+                        written->at(r_i)->replace(b_index, 1);//Indicates data is there as a result of a write back. Do this just in case
                         M2C += blocksize;//Get data from memory since it's a read miss
-                        LRU[r_i][b_index] = age;//Update age bit to make it most recent
+                        LRU->at(r_i)->replace(b_index, age);//Update age bit to make it most recent
                         age++;
                         qDebug()<<"WBLRU0: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[r_i][b_index]<<"\n";
+                                  " written is"<<written->at(r_i)->at(b_index)<<"\n";
                     }
                 }
             }
@@ -451,8 +463,8 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     {
         for (int j = 0; j<numsets; j++)
         {
-            if (written[i][j]==1)
-            C2M += (written[i][j]*blocksize);
+            if (written->at(i)->at(j)==1)
+                C2M += (written->at(i)->at(j)*blocksize);
         }
     }
     qDebug()<<"For 1024 cache, 8 block size, write through, 2 way, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
