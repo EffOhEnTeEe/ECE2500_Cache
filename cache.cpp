@@ -145,6 +145,7 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
             }
         }
     }//For loop end bracket
+
     hitratio = hit/hitdenum;
     for (int i = 0; i<written.size(); i++)//Evict the last bits
     {
@@ -214,41 +215,43 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
         //Tag
         int tag = int_addresses[i]/blocksize/numsets;
         qDebug()<<(i+1)<<":"<<"Tag is "<<tag;
+        qDebug()<<(i+1)<<":"<<"# of sets is"<<numsets;
+        qDebug()<<(i+1)<<":"<<"# of ways is"<<numways;
 
         if (readwrite[i].toLower() == "read")
         {
             int flag_hit = 0;//If a hit
             int flag_found = 0;//If a space is found
             //Checking for a hit
-            for(int i = 0; i<numways; i++)//Iterate through all the ways to find a hit
+            for(int a = 0; a<numways; a++)//Iterate through all the ways to find a hit
             {
-                if(blocks[i][b_index] == tag)
+                if(blocks[a][b_index] == tag)
                 {
                     hit++;
-                    LRU[i][b_index] = age;
+                    LRU[a][b_index] = age;
                     age++;
                     flag_hit = 1;
                     qDebug()<<"ReadHit: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                              " written is"<<written[i][b_index]<<"\n";
+                              " written is"<<written[a][b_index]<<"\n";
                     break;
                 }
             }
             //If a hit was not found, see if there is an empty space for the data
             if (flag_hit != 1)
             {
-                for(int i = 0; i<numways; i++)//Iterate through all the ways to find empty set
+                for(int a = 0; a<numways; a++)//Iterate through all the ways to find empty set
                 {
-                    if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
+                    if((blocks[a][b_index]!= tag) && (written[a][b_index]== NULL))
                     {
                         //If tag doesn't match and no data is there
-                        blocks[i][b_index] = tag;
-                        written[i][b_index] = 0;
-                        LRU[i][b_index] = age;
+                        blocks[a][b_index] = tag;
+                        written[a][b_index] = 0;
+                        LRU[a][b_index] = age;
                         age++;
                         M2C += blocksize;
                         flag_found = 1;//Placement found
                         qDebug()<<"ReadPlace: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[i][b_index]<<"\n";
+                                  " written is"<<written[a][b_index]<<"\n";
                         break;
                     }
                 }
@@ -256,15 +259,15 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
             if (flag_found == 0)//If placement was not found, perform LRU algorithm
             {
                 int r_i = 0;//Replaced i
-                for(int i = 0; i<numways-1; i++)//Iterate through all the ways
+                for(int a = 0; a<numways-1; a++)//Iterate through all the ways
                 {
-                    if(LRU[r_i][b_index] < LRU[i+1][b_index])
+                    if(LRU[r_i][b_index] < LRU[a+1][b_index])
                     {
-                        r_i = i;
+                        r_i = a;
                     }
                     else
                     {
-                        r_i = i+1;
+                        r_i = a+1;
                     }
                 }
                 if (written[r_i][b_index]== 1)//Data here was from a write back
@@ -276,7 +279,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     LRU[r_i][b_index] = age;//Update age bit to make it most recent
                     age++;
                     qDebug()<<"ReadLRU1: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                              " written is"<<written[i][b_index]<<"\n";
+                              " written is"<<written[r_i][b_index]<<"\n";
                 }
                 if (written[r_i][b_index]== 0)//Data here was not from a write back
                 {
@@ -286,7 +289,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     LRU[r_i][b_index] = age;//Update age bit to make it most recent
                     age++;
                     qDebug()<<"ReadLRU0: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                              " written is"<<written[i][b_index]<<"\n";
+                              " written is"<<written[r_i][b_index]<<"\n";
                 }
             }
         }
@@ -297,37 +300,37 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 int flag_hit = 0;//If a hit
                 int flag_found = 0;//If a space is found
                 //Checking for a hit
-                for(int i = 0; i<numways; i++)//Iterate through all the ways to find a hit
+                for(int a = 0; a<numways; a++)//Iterate through all the ways to find a hit
                 {
-                    if(blocks[i][b_index] == tag)
+                    if(blocks[a][b_index] == tag)
                     {
                         hit++;
-                        LRU[i][b_index] = age;
+                        LRU[a][b_index] = age;
                         age++;
                         C2M += 4;
                         flag_hit = 1;
                         qDebug()<<"WTHit: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[i][b_index]<<"\n";
+                                  " written is"<<written[a][b_index]<<"\n";
                         break;
                     }
                 }
                 //If a hit was not found, see if there is an empty space for the data
                 if (flag_hit != 1)
                 {
-                    for(int i = 0; i<numways; i++)//Iterate through all the ways to find empty set
+                    for(int a = 0; a<numways; a++)//Iterate through all the ways to find empty set
                     {
-                        if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
+                        if((blocks[a][b_index]!= tag) && (written[a][b_index]== NULL))
                         {
                             //If tag doesn't match and no data is there
-                            blocks[i][b_index] = tag;
-                            written[i][b_index] = 0;
-                            LRU[i][b_index] = age;
+                            blocks[a][b_index] = tag;
+                            written[a][b_index] = 0;
+                            LRU[a][b_index] = age;
                             age++;
                             M2C += blocksize;
                             C2M += 4;
                             flag_found = 1;//Placement found
                             qDebug()<<"WTPlaced: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                      " written is"<<written[i][b_index]<<"\n";
+                                      " written is"<<written[a][b_index]<<"\n";
                             break;
                         }
                     }
@@ -335,15 +338,15 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 if (flag_found == 0)//If placement was not found, perform LRU algorithm
                 {
                     int r_i = 0;//Replaced i
-                    for(int i = 0; i<numways-1; i++)
+                    for(int a = 0; a<numways-1; a++)
                     {
-                        if(LRU[r_i][b_index] < LRU[i+1][b_index])
+                        if(LRU[r_i][b_index] < LRU[a+1][b_index])
                         {
-                            r_i = i;
+                            r_i = a;
                         }
                         else
                         {
-                            r_i = i+1;
+                            r_i = a+1;
                         }
                     }
                     blocks[r_i][b_index] = tag;
@@ -353,7 +356,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     LRU[r_i][b_index] = age;//Update age bit to make it most recent
                     age++;
                     qDebug()<<"WTLRU: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                              " written is"<<written[i][b_index]<<"\n";
+                              " written is"<<written[r_i][b_index]<<"\n";
                 }
             }//End of WT
 
@@ -362,35 +365,35 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 int flag_hit = 0;//If a hit
                 int flag_found = 0;//If a space is found
                 //Checking for a hit
-                for(int i = 0; i<numways; i++)//Iterate through all the ways to find a hit
+                for(int a = 0; a<numways; a++)//Iterate through all the ways to find a hit
                 {
-                    if(blocks[i][b_index] == tag)
+                    if(blocks[a][b_index] == tag)
                     {
                         hit++;
-                        LRU[i][b_index] = age;
+                        LRU[a][b_index] = age;
                         age++;
                         flag_hit = 1;
                         qDebug()<<"WBHit: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[i][b_index]<<"\n";
+                                  " written is"<<written[a][b_index]<<"\n";
                         break;
                     }
                 }
                 //If a hit was not found, see if there is an empty space for the data
                 if (flag_hit != 1)
                 {
-                    for(int i = 0; i<numways; i++)//Iterate through all the ways to find empty set
+                    for(int a = 0; a<numways; a++)//Iterate through all the ways to find empty set
                     {
-                        if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
+                        if((blocks[a][b_index]!= tag) && (written[a][b_index]== NULL))
                         {
                             //If tag doesn't match and no data is there
-                            blocks[i][b_index] = tag;
-                            written[i][b_index] = 1;
-                            LRU[i][b_index] = age;
+                            blocks[a][b_index] = tag;
+                            written[a][b_index] = 1;
+                            LRU[a][b_index] = age;
                             age++;
                             M2C += blocksize;
                             flag_found = 1;//Placement found
                             qDebug()<<"WBPlaced: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                      " written is"<<written[i][b_index]<<"\n";
+                                      " written is"<<written[a][b_index]<<"\n";
                             break;
                         }
                     }
@@ -398,15 +401,15 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 if (flag_found == 0)//If placement was not found, perform LRU algorithm
                 {
                     int r_i = 0;//Replaced i
-                    for(int i = 0; i<numways-1; i++)
+                    for(int a = 0; a<numways-1; a++)
                     {
-                        if(LRU[r_i][b_index] < LRU[i+1][b_index])
+                        if(LRU[r_i][b_index] < LRU[a+1][b_index])
                         {
-                            r_i = i;
+                            r_i = a;
                         }
                         else
                         {
-                            r_i = i+1;
+                            r_i = a+1;
                         }
                     }
                     if (written[r_i][b_index] == 1)//If data there was from a write back
@@ -418,7 +421,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         LRU[r_i][b_index] = age;//Update age bit to make it most recent
                         age++;
                         qDebug()<<"WBLRU1: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[i][b_index]<<"\n";
+                                  " written is"<<written[r_i][b_index]<<"\n";
                     }
                     if (written[r_i][b_index] == 0)//If data there is not from a write back
                     {
@@ -428,17 +431,17 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         LRU[r_i][b_index] = age;//Update age bit to make it most recent
                         age++;
                         qDebug()<<"WBLRU0: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
-                                  " written is"<<written[i][b_index]<<"\n";
+                                  " written is"<<written[r_i][b_index]<<"\n";
                     }
                 }
             }
         }
-    }
+    }//End of for loop
     hitratio = hit/hitdenum;
     for (int i = 0; i<num_blocks; i++)//Evict the last bits
     {
         for (int j = 0; j<numsets; j++)
             C2M += written[i][j]*blocksize;
     }
-    qDebug()<<"For 1024 cache, 8 block size, write back, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
+    qDebug()<<"For 1024 cache, 8 block size, write through, 2 way, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
 }
