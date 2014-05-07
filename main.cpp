@@ -12,8 +12,12 @@ QList<QString> final;       //What you output to the file. Contains all the data
 
 int main(int argc, char *argv[])
 {
+    if(argc != 2)
+    {
+        qFatal("Error: incorrent number of arguments");
+    }
     Cache c1;
-    c1.Read(argv[1]);
+    c1.Read(QString(argv[1]));
     c1.to_int();
     //1024 cache, 8 block size
     c1.DirectMap(1024,8,0);

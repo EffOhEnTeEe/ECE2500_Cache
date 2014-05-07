@@ -14,6 +14,7 @@ Cache::Cache()
 }
 void Cache::Read(QString filename)
 {
+    filename = filename+".trace";
     QString path = filename;
     QFile input(path);
     QTextStream stream(&input);
