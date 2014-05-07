@@ -152,7 +152,7 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
     qDebug()<<"For 1024 cache, 8 block size, write back, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
 }
 
-void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, int full)
+void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, int full)
 {
     //wt_enable = 1 means write through, 0 means write back
     int num_blocks = cachesize/blocksize;//Number of blocks
@@ -193,7 +193,7 @@ void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, 
 
     QVector< QVector<int> > blocks(numways);//Keeps track of tags
     QVector< QVector<int> > written(numways);   //Keep track of written bits for write back. Null signifies empty.
-                                                //0 signifies read/write WT. 1 signifies written WB.
+    //0 signifies read/write WT. 1 signifies written WB.
     QVector< QVector<int> > LRU(numways); //Keep track of written bits for write back.
 
     for(int i = 0; i < numways; i++)//Appends to the Vectors
@@ -216,23 +216,49 @@ void NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, 
 
         if (readwrite[i].toLower() == "read")
         {
-            for(int i = 0; i<blocks.size(); i++)//Iterate through all the ways
+            int flag_hit = 0;//If a hit
+            int flag_nottaken = 0;//If not taken
+            //Checking for a hit
+            for(int i = 0; i<numways; i++)//Iterate through all the ways
             {
-                if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
+                if(blocks[i][b_index] == tag)
                 {
-                    //If tag doesn't match and no data is there
-                    blocks[i][b_index] = tag;
-                    written[i][b_index] = 0;
+                    hit++;
                     LRU[i][b_index] = age;
                     age++;
-                    M2C += blocksize;
-                    qDebug()<<"1 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<" age is "<<age<<"\n";;
+                    flag_hit = 1;
                 }
             }
-        }
+            //If a hit was not found, see if there is an empty space for the data
+            if (flag_hit != 1)
+            {
+                for(int i = 0; i<numways; i++)//Iterate through all the ways
+                {
+                    if((blocks[i][b_index]!= tag) && (written[i][b_index]== NULL))
+                    {
+                        //If tag doesn't match and no data is there
+                        blocks[i][b_index] = tag;
+                        written[i][b_index] = 0;
+                        LRU[i][b_index] = age;
+                        age++;
+                        M2C += blocksize;
+                        qDebug()<<"1 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<" age is "<<age<<"\n";
+                        flag = 1;//Placement found
+                        break;
+                    }
+                }
+            }
+            if (flag == 0)//If place
+            {
+                for(int i = 0; i<numways; i++)//Iterate through all the ways
+                {
+
+                }
+            }
         }
         if (readwrite[i].toLower() == "write")
         {
 
         }
     }
+}
