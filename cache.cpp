@@ -177,7 +177,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     //Deciding ways
     if (twoway)
     {
-        numways = 2;
+        numways = 2;//
     }
     else if (fourway)
     {
@@ -239,9 +239,11 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
             //If a hit was not found, see if there is an empty space for the data
             if (flag_hit != 1)
             {
+                qDebug()<<"read hit not found. Time to check";
                 for(int a = 0; a<numways; a++)//Iterate through all the ways to find empty set
                 {
-                    if((blocks[a][b_index]!= tag) && (written[a][b_index]== NULL))
+                    qDebug()<<"checking";
+                    if((blocks[a][b_index]!= tag) && (written[a][b_index]== NULL) )
                     {
                         //If tag doesn't match and no data is there
                         blocks[a][b_index] = tag;
@@ -254,6 +256,8 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                                   " written is"<<written[a][b_index]<<"\n";
                         break;
                     }
+                    qDebug()<<flag_found;
+                    qDebug()<<written[a][b_index];
                 }
             }
             if (flag_found == 0)//If placement was not found, perform LRU algorithm
@@ -438,10 +442,13 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
         }
     }//End of for loop
     hitratio = hit/hitdenum;
-    for (int i = 0; i<num_blocks; i++)//Evict the last bits
+    for (int i = 0; i<numways; i++)//Evict the last bits
     {
         for (int j = 0; j<numsets; j++)
-            C2M += written[i][j]*blocksize;
+        {
+            if (written[i][j]==1)
+            C2M += (written[i][j]*blocksize);
+        }
     }
     qDebug()<<"For 1024 cache, 8 block size, write through, 2 way, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
 }
