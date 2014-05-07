@@ -280,7 +280,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 if (written->at(r_i)->at(b_index) == 1)//Data here was from a write back
                 {
                     blocks->at(r_i)->replace(b_index,tag);
-                    written->at(r_i)->replace(b_index,0);//Indicates data is there not as a result of a write
+                    written->at(r_i)->replace(b_index,0);//Indicates data is there not as a result of a write back
                     M2C += blocksize;//Get data from memory since it's a read miss
                     C2M += blocksize;//Eviction so C2M needs to update
                     LRU->at(r_i)->replace(b_index,age);//Update age bit to make it most recent
@@ -291,7 +291,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                 else if (written->at(r_i)->at(b_index)== 0)//Data here was not from a write back
                 {
                     blocks->at(r_i)->replace(b_index,tag);
-                    written->at(r_i)->replace(b_index,0);//Indicates data is there not as a result of a write
+                    written->at(r_i)->replace(b_index,0);//Indicates data is there not as a result of a write. Just in case
                     M2C += blocksize;//Get data from memory since it's a read miss
                     LRU->at(r_i)->replace(b_index,age);//Update age bit to make it most recent
                     age++;
@@ -378,6 +378,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     {
                         hit++;
                         LRU->at(a)->replace(b_index, age);
+                        written->at(a)->replace(b_index, 1);//Result of a write back
                         age++;
                         flag_hit = 1;
                         qDebug()<<"WBHit: Hit is"<<hit<< " M2C is "<<M2C<<" C2M is "<<C2M<<" age is "<<age<<
