@@ -62,6 +62,11 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
     float hit = 0;//Keep track of hits
     float hitdenum = int_addresses.size();//Used to calculate the hit ratio
     float hitratio = 0;
+    QString wp;//Write policy
+    if (wt_enable == 1)
+        wp = "WT";
+    else if (wt_enable == 0)
+        wp = "WB";
     QVector<int> blocks(numsets);//Keeps track of tags
     QVector<int> written(numsets); //Keep track of written bits for write back. A method of implementing valid bits
     //Calculating block index and tag for each
@@ -151,7 +156,10 @@ void Cache::DirectMap(int cachesize, int blocksize, int wt_enable)
     {
         C2M += written[i]*blocksize;
     }
-    qDebug()<<"For 1024 cache, 8 block size, write back, hit ratio is "<<hitratio<<"M2C is "<<M2C<<" C2M is "<<C2M;
+    QString temp_line = QString::number(cachesize)+"\t"+QString::number(blocksize)+"\tDM\t"+wp+"\t"+QString::number(hitratio,'f',2)+"\t"+
+            QString::number(M2C)+"\t"+QString::number(C2M)+"\t"+"1";
+    final.append(temp_line);
+    everything = final.join("\n");
 }
 
 void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fourway, int full)
@@ -161,18 +169,26 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     int age = 0;    //Used to keep track of LRU
     int numsets;
     int numways;
+    QString mapt;//Map type indicator
+    int num_comps;//Keep track of how mayn comparisons
+
     //Deciding the number of sets
     if (twoway)
     {
         numsets = num_blocks/2;
+        mapt = "2W";
+        num_comps = 2;
     }
     else if (fourway)
     {
         numsets = num_blocks/4;
+        mapt = "4W";
+        num_comps = 4;
     }
     else if (full)
     {
         numsets = 1;
+        mapt = "FA";
     }
     //Deciding ways
     if (twoway)
@@ -186,6 +202,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
     else if (full)
     {
         numways = num_blocks;
+        num_comps = num_blocks;
     }
 
     int C2M = 0;//Cache to memory
@@ -446,12 +463,50 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
         }//End of WB if statement
     }//End of for loop
     hitratio = hit/hitdenum;
-    for (int i = 0; i<numways; i++)//Evict the last bits
+    if (wt_enable == 0)//Write back
     {
-        for (int j = 0; j<numsets; j++)
+        for (int i = 0; i<numways; i++)//Evict the last bits
         {
-            C2M += ((written->at(i)->at(j))*blocksize);
+            for (int j = 0; j<numsets; j++)
+            {
+                C2M += ((written->at(i)->at(j))*blocksize);
+            }
         }
     }
-    qDebug()<<"Hit "<<hitratio<<" M2C is "<<M2C<<" C2M is "<<C2M;
+    this->toStringList(cachesize, blocksize,mapt,wt_enable, hitratio,M2C, C2M, num_comps);
+    everything = final.join("\n");
+}
+
+void Cache::toStringList(int c_size, int b_size, QString maptype, int w_type, float h_rate, int mem2cache,
+                         int cache2mem, int comparisons)
+{
+    QString line;//Final line
+    QString s_csize;
+    QString s_bsize;
+    QString s_wtype;//Write type
+    QString s_hit;//hitrate expressed as a string
+    QString s_m2c;
+    QString s_c2m;
+    QString s_comps;
+    s_csize = QString::number(c_size);
+    s_bsize = QString::number(b_size);
+    s_hit = QString::number(h_rate,'f',2);
+    s_m2c = QString::number(mem2cache);
+    s_c2m = QString::number(cache2mem);
+    s_comps = QString::number(comparisons);
+    if (w_type == 1)
+    {
+        s_wtype = "WT";
+    }
+    else if (w_type == 0)
+    {
+        s_wtype = "WB";
+    }
+    line = s_csize+"\t"+s_bsize+"\t"+maptype+"\t"+s_wtype+"\t"+s_hit+"\t"+s_m2c+"\t"+s_c2m+"\t"+s_comps;
+    final.append(line);
+}
+
+QString Cache::getEverything()
+{
+    return everything;
 }
