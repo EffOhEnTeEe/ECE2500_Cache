@@ -217,7 +217,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
         if (readwrite[i].toLower() == "read")
         {
             int flag_hit = 0;//If a hit
-            int flag_nottaken = 0;//If not taken
+            int flag_found = 0;//If a space is found
             //Checking for a hit
             for(int i = 0; i<numways; i++)//Iterate through all the ways
             {
@@ -227,6 +227,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                     LRU[i][b_index] = age;
                     age++;
                     flag_hit = 1;
+                    break;
                 }
             }
             //If a hit was not found, see if there is an empty space for the data
@@ -243,7 +244,7 @@ void Cache::NWay(int cachesize, int blocksize, int wt_enable, int twoway, int fo
                         age++;
                         M2C += blocksize;
                         qDebug()<<"1 Hit is"<<hit<< " M2C is "<<M2C<<" C2M is"<<C2M<<" age is "<<age<<"\n";
-                        flag = 1;//Placement found
+                        flag_found = 1;//Placement found
                         break;
                     }
                 }
